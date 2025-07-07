@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bunny Hop Game</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    canvas { display: block; background: #ccf5ff; margin: 0 auto; }
+    body { text-align: center; font-family: sans-serif; }
+  </style>
+</head>
+<body>
+  <h1>Bunny Hop</h1>
+  <canvas id="gameCanvas" width="800" height="400"></canvas>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const bunny = {
+      x: 100,
+      y: 300,
+      width: 40,
+      height: 40,
+      dy: 0,
+      gravity: 0.8,
+      jumpPower: -12,
+      grounded: false
+    };
+
+    let obstacles = [];
+    let gameSpeed = 5;
+    let score = 0;
+    let gameOver = false;
+
+    function createObstacle() {
+      const height = 40;
+      obstacles.push({ x: canvas.width, y: canvas.height - height, width: 20, height });
+    }
+
+    function drawBunny() {
+      ctx.fillStyle = '#ffb6c1';
+      ctx.fillRect(bunny.x, bunny.y, bunny.width, bunny.height);
+    }
+
+    function drawObstacles() {
+      ctx.fillStyle = '#333';
+      obstacles.forEach(ob => {
+        ctx.fillRect(ob.x, ob.y, ob.width, ob.height);
+      });
+    }
+
+    function update() {
+      bunny.dy += bunny.gravity;
+      bunny.y += bunny.dy;
+
+      if (bunny.y + bunny.height > canvas.height) {
+        bunny.y = canvas.height - bunny.height;
+        bunny.dy = 0;
+        bunny.grounded = true;
+      } else {
+        bunny.grounded = false;
+      }
+
+      obstacles.forEach(ob => {
+        ob.x -= gameSpeed;
+
+        // Collision detection
+        if (
+          bunny.x < ob.x + ob.width &&
+          bunny.x + bunny.width > ob.x &&
+          bunny.y < ob.y + ob.height &&
+          bunny.y + bunny.height > ob.y
+        ) {
+          gameOver = true;
+        }
+      });
+
+      // Remove offscreen obstacles
+      obstacles = obstacles.filter(ob => ob.x + ob.width > 0);
+
+      // Score
+      score++;
+    }
+
+    function drawScore() {
+      ctx.fillStyle = '#000';
+      ctx.font = '20px Arial';
+      ctx.fillText('Score: ' + Math.floor(score / 10), 10, 30);
+    }
+
+    function drawGameOver() {
+      ctx.fillStyle = 'red';
+      ctx.font = '40px Arial';
+      ctx.fillText('Game Over', canvas.width / 2 - 100, canvas.height / 2);
+    }
+
+    function gameLoop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawBunny();
+      drawObstacles();
+      drawScore();
+
+      if (gameOver) {
+        drawGameOver();
+        return;
+      }
+
+      update();
+      requestAnimationFrame(gameLoop);
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && bunny.grounded) {
+        bunny.dy = bunny.jumpPower;
+      }
+    });
+
+    setInterval(() => {
+      if (!gameOver) {
+        createObstacle();
+      }
+    }, 1500);
+
+    gameLoop();
+  </script>
+</body>
+</html>
