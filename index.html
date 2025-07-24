@@ -2,126 +2,76 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Bunny Hop Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multiple-of-5 Second Timer</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    canvas { display: block; background: #ccf5ff; margin: 0 auto; }
-    body { text-align: center; font-family: sans-serif; }
+    body { font-family: sans-serif; text-align: center; margin-top: 50px; }
+    #timeDisplay { font-size: 48px; margin: 20px; }
+    #message { font-size: 24px; margin: 20px; }
+    #bestScore { font-size: 24px; margin: 20px; }
+    button { font-size: 24px; padding: 10px 20px; cursor: pointer; }
   </style>
 </head>
 <body>
-  <h1><h1>I DID IT KAI MWAHAHA</h1></h1>
-  <canvas id="gameCanvas" width="800" height="400"></canvas>
+  <h1>Multiple-of-5 Second Timer</h1>
+  <div id="timeDisplay">0.00</div>
+  <button id="controlButton">Start</button>
+  <div id="message"></div>
+  <div id="bestScore">Best Score: 0.00</div>
+
   <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
+    let startTime = null;
+    let timerInterval = null;
+    let bestScore = 0;
+    let running = false;
 
-    const bunny = {
-      x: 100,
-      y: 300,
-      width: 40,
-      height: 40,
-      dy: 0,
-      gravity: 0.8,
-      jumpPower: -12,
-      grounded: false
-    };
+    const timeDisplay = document.getElementById('timeDisplay');
+    const controlButton = document.getElementById('controlButton');
+    const message = document.getElementById('message');
+    const bestScoreDisplay = document.getElementById('bestScore');
 
-    let obstacles = [];
-    let gameSpeed = 5;
-    let score = 0;
-    let gameOver = false;
-
-    function createObstacle() {
-      const height = 40;
-      obstacles.push({ x: canvas.width, y: canvas.height - height, width: 20, height });
+    function updateDisplay() {
+      const elapsed = (performance.now() - startTime) / 1000;
+      timeDisplay.textContent = elapsed.toFixed(2);
     }
 
-    function drawBunny() {
-      ctx.fillStyle = '#ffb6c1';
-      ctx.fillRect(bunny.x, bunny.y, bunny.width, bunny.height);
+    function startTimer() {
+      startTime = performance.now();
+      timerInterval = setInterval(updateDisplay, 10);
+      controlButton.textContent = 'Stop';
+      message.textContent = '';
+      running = true;
     }
 
-    function drawObstacles() {
-      ctx.fillStyle = '#333';
-      obstacles.forEach(ob => {
-        ctx.fillRect(ob.x, ob.y, ob.width, ob.height);
-      });
-    }
+    function stopTimer() {
+      clearInterval(timerInterval);
+      const elapsed = (performance.now() - startTime) / 1000;
+      timeDisplay.textContent = elapsed.toFixed(2);
 
-    function update() {
-      bunny.dy += bunny.gravity;
-      bunny.y += bunny.dy;
-
-      if (bunny.y + bunny.height > canvas.height) {
-        bunny.y = canvas.height - bunny.height;
-        bunny.dy = 0;
-        bunny.grounded = true;
-      } else {
-        bunny.grounded = false;
-      }
-
-      obstacles.forEach(ob => {
-        ob.x -= gameSpeed;
-
-        // Collision detection
-        if (
-          bunny.x < ob.x + ob.width &&
-          bunny.x + bunny.width > ob.x &&
-          bunny.y < ob.y + ob.height &&
-          bunny.y + bunny.height > ob.y
-        ) {
-          gameOver = true;
+      // Check if elapsed is a multiple of 5 seconds within a threshold
+      const remainder = elapsed % 5;
+      const threshold = 0.02; // 20ms tolerance
+      if (Math.abs(remainder) < threshold || Math.abs(remainder - 5) < threshold) {
+        message.textContent = 'Perfect! You stopped at ' + elapsed.toFixed(2) + ' seconds.';
+        if (elapsed > bestScore) {
+          bestScore = parseFloat(elapsed.toFixed(2));
+          bestScoreDisplay.textContent = 'Best Score: ' + bestScore.toFixed(2);
         }
-      });
-
-      // Remove offscreen obstacles
-      obstacles = obstacles.filter(ob => ob.x + ob.width > 0);
-
-      // Score
-      score++;
-    }
-
-    function drawScore() {
-      ctx.fillStyle = '#000';
-      ctx.font = '20px Arial';
-      ctx.fillText('Score: ' + Math.floor(score / 10), 10, 30);
-    }
-
-    function drawGameOver() {
-      ctx.fillStyle = 'red';
-      ctx.font = '40px Arial';
-      ctx.fillText('Game Over', canvas.width / 2 - 100, canvas.height / 2);
-    }
-
-    function gameLoop() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawBunny();
-      drawObstacles();
-      drawScore();
-
-      if (gameOver) {
-        drawGameOver();
-        return;
+      } else {
+        message.textContent = 'Miss! Try again.';
       }
 
-      update();
-      requestAnimationFrame(gameLoop);
+      controlButton.textContent = 'Start';
+      running = false;
     }
 
-    document.addEventListener('keydown', (e) => {
-      if (e.code === 'Space' && bunny.grounded) {
-        bunny.dy = bunny.jumpPower;
+    controlButton.addEventListener('click', () => {
+      if (!running) {
+        startTimer();
+      } else {
+        stopTimer();
       }
     });
-
-    setInterval(() => {
-      if (!gameOver) {
-        createObstacle();
-      }
-    }, 1500);
-
-    gameLoop();
   </script>
 </body>
 </html>
