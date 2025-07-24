@@ -46,19 +46,21 @@
     function stopTimer() {
       clearInterval(timerInterval);
       const elapsed = (performance.now() - startTime) / 1000;
-      timeDisplay.textContent = elapsed.toFixed(2);
+      const formatted = elapsed.toFixed(2);
+      timeDisplay.textContent = formatted;
 
-      // Check if elapsed is a multiple of 5 seconds within a threshold
-      const remainder = elapsed % 5;
-      const threshold = 0.02; // 20ms tolerance
-      if (Math.abs(remainder) < threshold || Math.abs(remainder - 5) < threshold) {
-        message.textContent = 'Perfect! You stopped at ' + elapsed.toFixed(2) + ' seconds.';
-        if (elapsed > bestScore) {
-          bestScore = parseFloat(elapsed.toFixed(2));
+      // Only accept exact multiples of 5.00 (no tolerance)
+      const [secStr, decStr] = formatted.split('.');
+      const seconds = parseInt(secStr, 10);
+      if (decStr === '00' && seconds % 5 === 0) {
+        message.textContent = 'Perfect! You stopped at ' + formatted + ' seconds.';
+        const score = parseFloat(formatted);
+        if (score > bestScore) {
+          bestScore = score;
           bestScoreDisplay.textContent = 'Best Score: ' + bestScore.toFixed(2);
         }
       } else {
-        message.textContent = 'Miss! Try again.';
+        message.textContent = 'Miss! You need an exact .00 on a multiple of 5 seconds.';
       }
 
       controlButton.textContent = 'Start';
