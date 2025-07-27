@@ -3,32 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Multiple-of-5 Second Timer</title>
+  <title>Stopwatch Leaderboard</title>
   <style>
     body { font-family: sans-serif; text-align: center; margin-top: 50px; }
     #timeDisplay { font-size: 48px; margin: 20px; }
     #message { font-size: 24px; margin: 20px; }
-    #bestScore { font-size: 24px; margin: 20px; }
+    #leaderboard { font-size: 20px; margin: 20px; }
     button { font-size: 24px; padding: 10px 20px; cursor: pointer; }
   </style>
 </head>
 <body>
-  <h1>Multiple-of-5 Second Timer</h1>
+  <h1>Stop the Watch on a Multiple of 5</h1>
+  <input id="nameInput" placeholder="Your name" />
   <div id="timeDisplay">0.00</div>
   <button id="controlButton">Start</button>
   <div id="message"></div>
-  <div id="bestScore">Best Score: 0.00</div>
+  <div id="leaderboard"></div>
 
   <script>
     let startTime = null;
     let timerInterval = null;
-    let bestScore = 0;
     let running = false;
 
     const timeDisplay = document.getElementById('timeDisplay');
     const controlButton = document.getElementById('controlButton');
     const message = document.getElementById('message');
-    const bestScoreDisplay = document.getElementById('bestScore');
+    const nameInput = document.getElementById('nameInput');
+    const leaderboard = document.getElementById('leaderboard');
 
     function updateDisplay() {
       const elapsed = (performance.now() - startTime) / 1000;
@@ -54,17 +55,36 @@
       const seconds = parseInt(secStr, 10);
       if (decStr === '00' && seconds % 5 === 0) {
         message.textContent = 'Perfect! You stopped at ' + formatted + ' seconds.';
-        const score = parseFloat(formatted);
-        if (score > bestScore) {
-          bestScore = score;
-          bestScoreDisplay.textContent = 'Best Score: ' + bestScore.toFixed(2);
-        }
+        sendScore(seconds);
       } else {
         message.textContent = 'Miss! You need an exact .00 on a multiple of 5 seconds.';
       }
 
       controlButton.textContent = 'Start';
       running = false;
+    }
+
+    function sendScore(seconds) {
+      const name = nameInput.value || 'Anonymous';
+      fetch('/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, score: seconds })
+      })
+      .then(res => res.json())
+      .then(updateLeaderboard);
+    }
+
+    function updateLeaderboard(scores) {
+      if (!Array.isArray(scores)) return;
+      leaderboard.innerHTML = '<h2>Top Players</h2>' +
+        '<ol>' + scores.map(s => `<li>${s.name} - ${s.score}</li>`).join('') + '</ol>';
+    }
+
+    function loadScores() {
+      fetch('/scores')
+        .then(res => res.json())
+        .then(updateLeaderboard);
     }
 
     controlButton.addEventListener('click', () => {
@@ -74,6 +94,8 @@
         stopTimer();
       }
     });
+
+    loadScores();
   </script>
 </body>
 </html>
